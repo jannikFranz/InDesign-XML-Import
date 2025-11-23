@@ -1,0 +1,133 @@
+//@include "glue code.jsx"
+
+const myInDesign = require("indesign")
+const app = myInDesign.app
+const { XMLImportStyles, XMLElementPosition, Capitalization, Justification, TabStopAlignment, SpecialCharacters } = myInDesign
+const ufs = require("uxp").storage.localFileSystem
+
+const myDocument = app.documents.item(0)
+
+myDocument.encoding = "UTF-8";
+
+const folder = await ufs.getEntryWithUrl("file:c:/Users/franz-j/Downloads/TransformationForPrint/Briefe_finale_Auswahl")
+let filePath
+try {
+    filePath = await folder.getEntry("Brieftexte.xml")
+} catch(error) {
+    filePath = await folder.createEntry("error.xml")
+}
+
+// TODO: Unerwünschte Leerzeichen entfernen per Skript! Leerzeilen entfernen per XSLT-Vorverarbeitung.
+
+const options = myDocument.xmlImportPreferences
+options.allowTransform = false // XSLT anwenden
+options.createLinkToXML = false // Verknüpfung erstellen (Synchronisation)
+options.ignoreUnmatchedIncoming = false // Nur Elemente importieren, die der vorhandenen Struktur entsprechen (nur bei ImportStyle = merge)
+options.ignoreWhitespace = false // Inhalte von Elementen, die nur Leerräume enthalten, nicht importieren (nur bei ImportStyle = merge)
+options.importCALSTables = false // CALS-Tabellen als InDesign-Tabellen importieren
+options.importStyle = XMLImportStyles.mergeImport
+options.importTextIntoTables = false // Textelemente in Tabellen importieren, wenn die Tags übereinstimmen (nur bei ImportStyle = merge)
+options.importToSelected = false // in ausgewähltes XML-Element importieren (wenn false, Import auf root-Element)
+options.removeUnmatchedExisting = true // Elemente, Rahmen und Inhalte löschen, die mit dem importierten XML nicht übereinstimmen (nur bei ImportStyle = merge)
+options.repeatTextElements = true // Wiederholte Textelemente kopieren (nur bei ImportStyle = merge)
+
+// import the XML (XML Structure can now be seen in the Structure pane)
+myDocument.importXML(filePath)
+
+
+
+// map paragraph styles to XML Tags in the imported document
+/*myDocument.xmlImportMaps.add(myDocument.xmlTags.item("title"), myDocument.paragraphStyles.item("kopfzeile_1"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("subtitle"), myDocument.paragraphStyles.item("kopfzeile_2"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("date"), myDocument.paragraphStyles.item("datum"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("addrLine"), myDocument.paragraphStyles.item("adresse_rechts"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("closer"), myDocument.paragraphStyles.item("closer"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("p"), myDocument.paragraphStyles.item("absatz"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("lb"), myDocument.paragraphStyles.item("break"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("seg"), myDocument.paragraphStyles.item("text_right"));
+
+// Get List of Block Level Elements from XML Tag Mapping an Process!!
+for (i = 0; i < myDocument.xmlImportMaps.length; i++) {
+  if (myDocument.xmlImportMaps.item(i).mappedStyle.constructor.name == "ParagraphStyle" ) {					
+    const _xpath = "//" + myDocument.xmlImportMaps.item(i).markupTag.name;
+    const node  = null; 
+    try { 
+      var _proc  = app.xmlRuleProcessors.add([_xpath]); 
+      var _match = _proc.startProcessingRuleSet(myDocument.xmlElements.item(0)); 
+      while( _match != undefined ) { 
+        _node = _match.element; 
+        _node.insertTextAsContent ("\r", XMLElementPosition.afterElement)
+        _match = _proc.findNextMatch(); 
+      }     
+    }			
+    catch( ex ) { 
+      throw (ex); 
+    } finally { 
+      _proc.endProcessingRuleSet(); 
+      _proc.remove(); 
+    } 
+  }
+}
+
+for (i = 0; i < myDocument.xmlImportMaps.length; i++) {
+  myDocument.xmlImportMaps.item(i).remove
+  alert(myDocument.xmlImportMaps.item(i).index)  
+}
+alert(myDocument.xmlImportMaps.length)*/
+// map paragraph styles to XML Tags in the imported document
+// myDocument.xmlImportMaps.add(myDocument.xmlTags.item("headline"), myDocument.paragraphStyles.item("kopfzeile"));
+
+/*myDocument.xmlImportMaps.add(myDocument.xmlTags.item("subtitle"), myDocument.paragraphStyles.item("kopfzeile_2"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("date"), myDocument.paragraphStyles.item("datum"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("addrLine"), myDocument.paragraphStyles.item("adresse_links"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("closer"), myDocument.paragraphStyles.item("closer"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("p"), myDocument.paragraphStyles.item("absatz"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("lb"), myDocument.paragraphStyles.item("break"));
+myDocument.xmlImportMaps.add(myDocument.xmlTags.item("seg"), myDocument.paragraphStyles.item("text_right"));*/
+
+
+
+const rootElement = myDocument.xmlElements.item(0)
+const myTextFrame = myDocument.pages.item(0).textFrames.item(0)
+//myTextFrame.geometricBounds = ["12.7", "12.7", "284.3", "197.3"]
+myTextFrame.placeXML(rootElement)
+
+// recompose the document to see the text added on the page
+app.activeDocument.recompose()
+
+// Titelzeilen
+const breigzeile = rootElement.evaluateXPathExpression("//headline")
+
+for (i = 0; i < breigzeile.length; i++) {
+  
+    let asccLength = breigzeile[i].xmlElements.item(2).contents.length + 4
+    let insertTab = breigzeile[i].paragraphs.item(0).insertionPoints.item(-asccLength)
+    insertTab.contents = SpecialCharacters.RIGHT_INDENT_TAB
+    // wenn SV-Nummer vorhanden
+    if (breigzeile[i].xmlElements.item(3)) {
+      let svLength = breigzeile[i].xmlElements.item(3).contents.length + 5
+      let insertTab = breigzeile[i].paragraphs.item(1).insertionPoints.item(-svLength)
+      insertTab.contents = SpecialCharacters.RIGHT_INDENT_TAB
+    }
+    else {}
+    
+    //alert(breigzeile[i].xmlElements.item(0).markupTag.name)
+    //alert(breigzeile[i].paragraphs.length)
+}
+
+alert("XML-Datei erfolgreich importiert und eingefügt! (Siehe Strukturansicht)")
+
+
+
+
+
+function alert(msg) {
+  theDialog = app.dialogs.add()
+  col = theDialog.dialogColumns.add()
+  colText = col.staticTexts.add()
+  colText.staticLabel = "" + msg
+  theDialog.canCancel = false
+  theDialog.show()
+  theDialog.destroy()
+  return
+}

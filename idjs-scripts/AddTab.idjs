@@ -1,0 +1,44 @@
+const myInDesign = require("indesign")
+const app = myInDesign.app
+const { XMLImportStyles, XMLElementPosition, Capitalization, Justification, TabStopAlignment, SpecialCharacters } = myInDesign
+
+const myDocument = app.documents.item(0)
+
+const rootElement = myDocument.xmlElements.item(0)
+
+
+// .insertionPoints.item(0).contents = SpecialCharacters.RIGHT_INDENT_TAB
+//const offset = breigzeile[0].texts.item(0).words.item(-1).insertionPoints.item(-1).horizontalOffset
+
+//alert(app.selection[0].tabList.length)
+
+//app.selection[0].tabList = [{position: offset, alignment: TabStopAlignment.rightAlign, leader: "."}];
+// alert(myDocument.textFrames.item(0).texts.item(0).tabStops.anyItem().isValid)
+//alert(app.selection[0].tabList.length)
+/*
+const breigzeile = rootElement.evaluateXPathExpression("//headline")
+const breigzeileTexts = breigzeile[1].texts.everyItem().getElements()
+for(var n=0;n<breigzeileTexts.length;n++)
+{
+  let parent = breigzeileTexts[n].insertionPoints.middleItem()
+  breigzeileTexts[n].   insertionPoints.lastItem().tabStops.add({alignment: TabStopAlignment.LEFT_ALIGN, position: 63, leader: "."})
+  alert(breigzeileTexts[n].insertionPoints.length)
+};
+
+alert("XML-Datei erfolgreich importiert und eingefügt! (Siehe Strukturansicht)")
+//alert(breigzeileTexts)
+*/
+
+
+
+
+function alert(msg) {
+  theDialog = app.dialogs.add()
+  col = theDialog.dialogColumns.add()
+  colText = col.staticTexts.add()
+  colText.staticLabel = "" + msg
+  theDialog.canCancel = false
+  theDialog.show()
+  theDialog.destroy()
+  return
+}

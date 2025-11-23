@@ -1,0 +1,2683 @@
+
+/* This script creates InDesign footnotes based on an imported XML file.
+   It looks for <footnote> elements in the XML Structure and builds an InDesign footnote
+   for each element with the element's content as footnote text. */ 
+/* Problem: Personen und Werke fliegen aus dem Index, sobald sie in die Fußnote kommen! => #dies scheint bei der Umwandlung der Fußnoten per move-Befehl kein Problem zu sein!# Indesign Fußnoten können keine Tags enthalten!
+   => scheint behoben, nun werden bei der Fußnoten-Umwandlung für jede Entität innerhalb des Fußnotentextes neue Indexverknüpfungen angelegt. => nicht nötig */
+// Kann es seitenübergreifende Fußnoten geben??? Denn die in dieser Datei generierten Indexeinträge sind mit der Fußnote im allgemeinen bzw. deren "texts"-Property verknüpft, nicht mit der konkreten Entität
+
+const myInDesign = require("indesign")
+const app = myInDesign.app
+const { PageReferenceType, LocationOptions } = myInDesign
+
+const myDocument = app.documents.item(0)
+
+const rootElement = myDocument.xmlElements.item(0)
+/*
+const mapIdToPersName = {
+    "p_351": "Behm, Eduard",
+    "p_593": "Breisach, Paul",
+    "p_252": "Bach, Johann Sebastian",
+    "p_296": "Bartók, Béla",
+    "p_186": "Arnold, Robert Franz",
+    "p_880": "Drach, Paul",
+    "p_220": "Auber, Daniel-François-Esprit",
+    "p_121": "Andreae, Volkmar",
+    "p_385": "Berg, Alban",
+    "p_165": "Apostel, Hans Erich",
+    "p_176": "Arnhold, Eduard",
+    "p_4090": "Weis-Ostborn, Julius",
+    "p_540": "Boult, Adrian",
+    "p_441": "Birchard, Clarence C.",
+    "p_683": "Caracciolo, Franco",
+    "p_331": "Beethoven, Ludwig van",
+    "p_452": "Bittner, Julius",
+    "p_375": "Bellermann, Heinrich",
+    "p_386": "Berg, Helene",
+    "p_298": "Basch, Walter",
+    "p_860": "Deutsch, Max",
+    "p_871": "Diamond, David",
+    "p_4190": "Winter, Hugo",
+    "p_442": "Bischoff, Hermann",
+    "p_486": "Blumenthal, Joseph von",
+    "p_299": "Bauer, Maria",
+    "p_3": "Bahr-Mildenburg, Anna",
+    "p_2090": "Laber, Heinrich",
+    "p_850": "Demel, Rudolf",
+    "p_971": "Eisler, Hanns",
+    "p_4290": "Wunderer, Alexander",
+    "p_3080": "Runge, Woldemar",
+    "p_861": "Désormière, Roger",
+    "p_3091": "Samazeuilh, Gustave",
+    "p_751": "Clark, Edward",
+    "p_872": "Dick, Marcel",
+    "p_4070": "Weinberger, Jaromír",
+    "p_4191": "Winter, Else",
+    "p_520": "Boruttau, Alfred",
+    "p_883": "Dressel, Erwin",
+    "p_531": "Botstiber, Hugo",
+    "p_894": "Drill-Orridge, Theodora",
+    "p_4092": "Weiss, Adolph",
+    "p_300": "Bechert, Paul",
+    "p_564": "Braunfels, Walter",
+    "p_685": "Casals, Pablo",
+    "p_212": "Astruc, Gabriel",
+    "p_498": "Bodanzky, Artur",
+    "p_3290": "Schönberg, Mathilde",
+    "p_840": "Decsey, Ernst",
+    "p_741": "Chevillard, Camille",
+    "p_873": "Rieti, Vittorio",
+    "p_994": "Englisch",
+    "p_642": "Bunlet, Marcelle",
+    "p_774": "Copland, Aaron",
+    "p_422": "Bie, Oscar",
+    "p_543": "Brahms, Johannes",
+    "p_785": "Culp, Julia",
+    "p_312": "Becker, Hugo",
+    "p_796": "Curjel, Hans",
+    "p_1090": "Foerster, Josef Bohuslav",
+    "p_2070": "Kugel, Georg",
+    "p_940": "Einstein, Albert",
+    "p_3170": "Scheu-Riesz, Helene",
+    "p_841": "Defauw, Désiré",
+    "p_995": "Erdmann, Eduard",
+    "p_4072": "Weingartner, Felix",
+    "p_90": "Albert, Eugen d’",
+    "p_368": "Bekker, Paul",
+    "p_137": "Ansermet, Ernest",
+    "p_2180": "Liszt, Franz",
+    "p_3281": "Schönberg, Georg",
+    "p_2071": "Koussevitzky, Serge",
+    "p_2192": "Loos, Adolf",
+    "p_2082": "Kutzschbach, Hermann",
+    "p_831": "Dallapiccola, Luigi",
+    "p_842": "Dehmel, Richard",
+    "p_4282": "Wüllner, Ludwig",
+    "p_985": "Engel, Carl",
+    "p_765": "Coolidge, Elizabeth Sprague",
+    "p_303": "Becker",
+    "p_666": "Calvocoressi, Michel Dimitri",
+    "p_688": "Casella, Alfredo",
+    "p_237": "Auernheimer, Raoul",
+    "p_358": "Schnabel-Behr, Therese",
+    "p_4261": "Wood, Henry",
+    "p_3172": "Close, Elizabeth",
+    "p_4151": "Wildgans, Friedrich",
+    "p_3084": "Ruppert",
+    "p_876": "Draber, Hermann Wilhelm",
+    "p_4195": "Winternitz-Dorda, Martha",
+    "p_898": "Droste-Hülshoff, Annette von",
+    "p_70": "Adler, Paula",
+    "p_304": "Becker, John J.",
+    "p_579": "Brecher, Gustav",
+    "p_469": "Bloch, Ernst",
+    "p_1060": "Feld, Leo",
+    "p_2160": "Lieser, Henriette Amalie",
+    "p_932": "Eberle, Josef",
+    "p_3041": "Rösch, Friedrich",
+    "p_3294": "Schönberg, Pauline",
+    "p_4273": "Wöss, Josef Venantius von",
+    "p_3063": "Rosenheim, Richard",
+    "p_2095": "Lafite, Carl",
+    "p_602": "Bruckner, Anton",
+    "p_987": "Engel",
+    "p_514": "Bopp, Wilhelm",
+    "p_756": "Collaer, Paul",
+    "p_206": "Aron, Paul",
+    "p_107": "Ančerl, Karel",
+    "p_1270": "Goldmark, Karl",
+    "p_2370": "Meyer, Conrad Ferdinand",
+    "p_3591": "Stadlen, Peter",
+    "p_2150": "Liebenthal, Erna",
+    "p_2392": "Mitropoulos, Dimitri",
+    "p_2282": "Manfred Pascotini, Olga",
+    "p_2172": "Linke, Karl",
+    "p_3030": "Rosbaud, Hans",
+    "p_812": "Czerny, Carl",
+    "p_3284": "Greissle, Gertrude",
+    "p_702": "Cassirer, Paul",
+    "p_3295": "Schönberg, Heinrich",
+    "p_3064": "Rosenstock, Joseph",
+    "p_4164": "Willner, Arthur",
+    "p_3196": "Schindler, Hans",
+    "p_3086": "Rynar, Dago",
+    "p_636": "Buhlig, Richard",
+    "p_405": "Berger, Rudolf",
+    "p_647": "Busoni, Ferruccio",
+    "p_416": "Berner, Lizzy",
+    "p_4098": "Wellesz, Egon",
+    "p_438": "Bien, Irene",
+    "p_1480": "Hartleben, Selma",
+    "p_2481": "Musorgskij, Modest Petrovič",
+    "p_3570": "Speiser, Maurice J.",
+    "p_2140": "Levi, Israel",
+    "p_1062": "Blumauer-Felix, Oskar",
+    "p_3372": "Schum, Alexander",
+    "p_2283": "Marschalk, Max",
+    "p_4230": "Wolff, Erich Jacques",
+    "p_2052": "Krebs, Carl",
+    "p_2294": "Marschalk, Olli",
+    "p_1095": "Francesco, Pietro di",
+    "p_4253": "Wolffheim, Werner",
+    "p_3164": "Scherl, August",
+    "p_3296": "Schoenberg, Ronald",
+    "p_3065": "Roth, Ernst",
+    "p_3197": "Schloezer, Boris de",
+    "p_3087": "Sachs, Benno",
+    "p_4066": "Weinberger, Josef",
+    "p_4187": "Winkler, Wilhelm",
+    "p_51": "Adler, Guido",
+    "p_417": "Bernstein, Arthur",
+    "p_329": "Beer, Gustave",
+    "p_1371": "Gütersloh, Albert Paris",
+    "p_1261": "Goldbaum, Wenzel",
+    "p_1151": "Fröbe, Ivan",
+    "p_3450": "Seligmann, Michael",
+    "p_3582": "Spielmann",
+    "p_3593": "Stangl, Karl",
+    "p_3120": "Scheinpflug, Paul",
+    "p_2031": "Kraus, Karl",
+    "p_3362": "Schulz-Dornburg, Rudolf",
+    "p_2394": "Milhaud, Darius",
+    "p_2163": "Liebstöckl, Hans",
+    "p_3142": "Schenker, Karl",
+    "p_3263": "Schönberg, Arnold",
+    "p_2053": "Krenek, Ernst",
+    "p_2295": "Marschalk, Klaus Wendelin",
+    "p_1085": "Fischer, O.",
+    "p_3395": "Schünemann, Georg",
+    "p_4133": "Wiedl",
+    "p_3286": "Greissle, Arnold",
+    "p_3297": "Schönberg, Gertrud",
+    "p_957": "Einstein, Carl",
+    "p_3066": "Rössler, Walter",
+    "p_2098": "Langlie, Warren",
+    "p_726": "Cherubini, Luigi",
+    "p_4177": "Windhopp, Louis?",
+    "p_1570": "Heymann, Hans",
+    "p_1691": "Jacob, Paul Walter",
+    "p_3880": "Trampus, Gianfranco",
+    "p_2670": "Beukers van Ogtrop, Jo",
+    "p_1240": "Mysz-Gmeiner, Lula",
+    "p_2351": "Mengelberg, Rudolf",
+    "p_1152": "Frölich, Anna Marie",
+    "p_2120": "Leibowitz, Ellen",
+    "p_3451": "Seligmann, Otto",
+    "p_2010": "Kowalski, Max",
+    "p_3583": "Spitzmüller-Harmersbach, Alexander",
+    "p_2021": "Krasa, Franz C.",
+    "p_1185": "Gabrilowitsch, Ossip Salomonowitsch",
+    "p_3484": "Siegel, Else",
+    "p_1196": "Galizenstein",
+    "p_4221": "Wolf, K.",
+    "p_3011": "Roller, Alfred",
+    "p_2164": "Liftschitz",
+    "p_1075": "Fiedler, Arthur",
+    "p_2296": "Marx, Joseph",
+    "p_1086": "Förstel, Gertrud",
+    "p_4001": "Webern, Anton",
+    "p_2186": "Loewe, Carl",
+    "p_1097": "Franck, Cesar",
+    "p_4134": "Wiener, Karl von",
+    "p_3045": "Rosé, Arnold",
+    "p_3056": "Rosé, Justine",
+    "p_3298": "Schrecker, Carl Berhard",
+    "p_4035": "Weigl, Karl",
+    "p_3067": "Rothe, Barbara",
+    "p_848": "Delius, Frederick",
+    "p_20": "Mjaskowski, Nikolaj",
+    "p_859": "Deržanovskij, Vladimir",
+    "p_1692": "Jacoby, Gerhard",
+    "p_3760": "Strawinsky, Igor",
+    "p_3881": "Čajkovskij, Pëtr Ilʹič",
+    "p_1461": "Hansen, Wilhelm",
+    "p_3771": "Strony, Charles",
+    "p_1351": "Gruenberg, Louis",
+    "p_2682": "Ondracek, Josef",
+    "p_3650": "Steinberg, William",
+    "p_1362": "Gutmann, Albert",
+    "p_2220": "Löwe, Ferdinand",
+    "p_1384": "Gutheil-Schoder, Marie",
+    "p_3320": "Schubert, Franz",
+    "p_3441": "Seidler, Paul",
+    "p_1021": "Erpf, Hermann",
+    "p_3210": "Schmidt, Franz",
+    "p_2121": "Leigh-Taylor, Noel Heath",
+    "p_3452": "Seligmann, Maria Sofia Adolfine",
+    "p_1032": "Eweyk, Arthur van",
+    "p_2363": "Merten, Erich",
+    "p_4310": "Zemlinsky, Clara von",
+    "p_2022": "Krasner, Louis",
+    "p_4332": "Zillig, Winfried",
+    "p_2275": "Malkin, Joseph",
+    "p_4222": "Wolf, R.",
+    "p_3496": "Simon, Eric",
+    "p_925": "Dzimitrowsky, Abram",
+    "p_4002": "Webern, Wilhelmine",
+    "p_3178": "Schillings, Max von",
+    "p_3299": "Schoenberg, Nuria",
+    "p_717": "Chantavoine, Jean",
+    "p_3068": "Rufer, Josef",
+    "p_4179": "Winkelmann, Hans",
+    "p_629": "Brusselmans, Jean",
+    "p_76": "Adorno, Theodor W.",
+    "p_1990": "Korngold, Julius",
+    "p_2980": "Robert, Richard",
+    "p_2870": "Ratz, Erwin",
+    "p_1660": "Hübner, Friedrich Markus",
+    "p_2760": "Petschull, Johannes",
+    "p_2881": "Ravel, Maurice",
+    "p_2650": "Ochs, Siegfried",
+    "p_1440": "Hammerschlag, Paul",
+    "p_3750": "Strauss, Richard",
+    "p_3871": "Thys, Marguerite",
+    "p_1330": "Greissle, Theresia",
+    "p_3640": "Steinbauer, Othmar",
+    "p_3772": "Stuckenschmidt, Hans Heinz",
+    "p_2562": "Neurath von, Konstantin",
+    "p_2683": "Oppenheim, Albin",
+    "p_1594": "Hillig, Curt",
+    "p_2694": "Paoli, Domenico De’",
+    "p_3662": "Steuermann, Eduard",
+    "p_2463": "Mottl, Felix",
+    "p_1495": "Hauer, Franz Josef",
+    "p_2100": "Lanier, Harriet",
+    "p_2221": "Löwensohn",
+    "p_1011": "Erfurth, Hugo",
+    "p_4300": "Wymetal, Wilhelm von",
+    "p_2122": "Lejeune, Nestor",
+    "p_3453": "Ševčík, Otakar",
+    "p_2155": "Liebenthal, Ite",
+    "p_3486": "Ziloti, Alexandr",
+    "p_1066": "Ferroud, Pierre Octave",
+    "p_4223": "Wolf, Sándor",
+    "p_4113": "Weprik, Alexander",
+    "p_4003": "Weber, Waldemar",
+    "p_1099": "Frankfurter, Richard",
+    "p_3289": "Greissle, Hermann",
+    "p_4158": "Dworaczek, Wilhelm",
+    "p_4048": "Weill, Kurt",
+    "p_619": "Bruneau, Alfred",
+    "p_33": "Abendroth, Hermann",
+    "p_509": "Boosey, Leslie Arthur",
+    "p_99": "Allatini, Éric",
+    "p_1870": "Kirchberger, Hans Fritz",
+    "p_1881": "Kleiber, Erich",
+    "p_2761": "Petyrek, Felix Karl August",
+    "p_1793": "Karasawina, Tamara",
+    "p_2420": "Mittelstaedt, Johannes",
+    "p_1210": "Geutebrück, Ernst",
+    "p_3872": "Tischer, Gerhard",
+    "p_1111": "Freijer, Hendrik",
+    "p_1595": "Hinnenberg-Lefèbre, Margot",
+    "p_3410": "Schwarz, Josef",
+    "p_1364": "Gutmann, Emil",
+    "p_1485": "Hartmann, Ernst",
+    "p_3300": "Schönberg, Anna",
+    "p_3421": "Schwarzmann, Norbert",
+    "p_3795": "Swencha, Helene",
+    "p_3432": "Seefehlner, Egon",
+    "p_3443": "Selby, Walford",
+    "p_3212": "Schmid-Schmidsfelden, Max",
+    "p_2244": "Mahler-Werfel, Alma Maria",
+    "p_2497": "Nachod, Hans",
+    "p_1287": "Goldsteen, Louis",
+    "p_4202": "Wittgenstein, Lydia",
+    "p_3355": "Schüler, Johannes",
+    "p_2387": "Michelmann, Gottfried",
+    "p_3256": "Schnirlin, Ossip",
+    "p_2167": "Lindemann, Ewald",
+    "p_4125": "Werndorff, Marietta",
+    "p_67": "Adler, Oskar",
+    "p_1750": "Kalmus, Alfred",
+    "p_1640": "Horwitz, Karl",
+    "p_1420": "Hagemann, Christian Carl",
+    "p_1541": "Heran, Bohuš",
+    "p_1310": "Gregori, Ferdinand",
+    "p_3972": "Walter, Bruno",
+    "p_2531": "Nestroy, Johann",
+    "p_1321": "Greissle, Josef Rudolf",
+    "p_1464": "Harden, Maximilian",
+    "p_2795": "Pisk, Paul Amadeus",
+    "p_1112": "Fried, Oskar",
+    "p_1354": "Grümmer, Wilhelm",
+    "p_2685": "Orel, Alfred",
+    "p_1596": "Hirsch, Josef",
+    "p_2322": "Mendelssohn, Robert von",
+    "p_3785": "Supan, Gertrude Susanna",
+    "p_2696": "Pappenheim-Frischauf, Marie von",
+    "p_1486": "Hartmann, Heinrich",
+    "p_3301": "Schreker, Franz",
+    "p_3543": "Solymos, Peter",
+    "p_2223": "Löwy, Robert",
+    "p_3675": "Stiedry, Fritz",
+    "p_4302": "Zehme, Albertine",
+    "p_2003": "Kornstein, Egon",
+    "p_2366": "Messchaert, Johannes",
+    "p_1167": "Furtwängler, Wilhelm",
+    "p_1288": "Gund, Robert",
+    "p_3103": "Sarnette, André",
+    "p_4203": "Wlach, Leopold",
+    "p_3378": "Schumann, Robert",
+    "p_917": "Dukas, Paul",
+    "p_2179": "Lohse, Otto",
+    "p_4005": "Wedekind, Frank",
+    "p_4126": "Westarp, Alfred",
+    "p_4247": "Wolff, Louise",
+    "p_4017": "Wegner, Curt",
+    "p_4138": "Wieser, Friedrich",
+    "p_1740": "Kallus, Paula",
+    "p_1751": "Kalmus, Edwin",
+    "p_1520": "Heinsheimer, Hans",
+    "p_2741": "Peragallo, Mario",
+    "p_1300": "Grainger, Percy",
+    "p_2631": "Novakovic, Olga",
+    "p_2994": "Röder, Carl Gottlieb",
+    "p_3731": "Stránský, Josef",
+    "p_3852": "Delaunois, Raymonde",
+    "p_1432": "Halévy, Jacques Fromental",
+    "p_2411": "Millenkovich, Max von",
+    "p_2422": "Moll, Carl",
+    "p_2785": "Philipsen, Carl Berhard",
+    "p_1575": "Hinrichsen, Henri",
+    "p_3632": "Thorpe, Marion",
+    "p_1102": "Frederick, Kurt",
+    "p_3885": "Toscanini, Arturo",
+    "p_1465": "Hartleben, Otto Erich",
+    "p_1113": "Fried, Gusti",
+    "p_1355": "Gruner, Erich",
+    "p_1597": "Hoérée, Arthur",
+    "p_3786": "Swarowsky, Hans",
+    "p_2576": "Newman, Ernest",
+    "p_1487": "Harty, Hamilton",
+    "p_3423": "Skrjabin, Aleksandr Nikolaevič",
+    "p_2334": "Mengelberg, Willem",
+    "p_1498": "Hauptmann, Gerhard",
+    "p_2224": "MacDonald, James Ramsay",
+    "p_2477": "Müller-Sehn, Wolfgang",
+    "p_3445": "Seligman, Walter Herbert",
+    "p_1025": "Estep, Donald\n                  K.",
+    "p_1399": "Guttmann, Hugo",
+    "p_4303": "Zehme, Felix",
+    "p_2125": "Lemberger, Fritz",
+    "p_2367": "Messner, Georg",
+    "p_1289": "Gounod, Charles",
+    "p_2015": "Kozlíková, Božena",
+    "p_2257": "Malipiero, Gian Francesco",
+    "p_1047": "Fauré, Gabriel",
+    "p_4325": "Zenk, Ludwig",
+    "p_3236": "Schmorl, Hans",
+    "p_3599": "Starbird, Arthur H.",
+    "p_2389": "Miklas, Wilhelm",
+    "p_2279": "Manén, Juan",
+    "p_2169": "Linden, Rudolph Cort van der",
+    "p_3027": "Römisch",
+    "p_3148": "Scherchen, Hermann",
+    "p_808": "Czako, Eva",
+    "p_4127": "Weterings, Joseph",
+    "p_4018": "Weigl, Joseph",
+    "p_1961": "Köpke",
+    "p_1510": "Heckroth",
+    "p_1400": "Guttmann, Ludwig",
+    "p_2973": "Ride",
+    "p_1884": "Kleibel",
+    "p_1532": "Heinzen, Carl",
+    "p_1774": "Kandinsky, Wassily",
+    "p_3842": "Teweles, Heinrich",
+    "p_1301": "Grandpierre, Ludwig",
+    "p_3600": "Stefan, Paul",
+    "p_3853": "Thomas, Louis",
+    "p_2764": "Pfersmann, Ludwig",
+    "p_1675": "Hutton, Charles B.",
+    "p_3743": "Straube, Julius",
+    "p_1202": "Geidel, Friedrich Moritz",
+    "p_1444": "Händel, Georg Friedrich",
+    "p_2665": "Offenbach, Jaques",
+    "p_2786": "Pike, D. E.",
+    "p_3633": "Stein, Richard",
+    "p_3886": "Tudor, Antony",
+    "p_3523": "Sladek, Franz",
+    "p_2313": "Mayer-Mahr, Moritz",
+    "p_2445": "Monteverdi, Claudio",
+    "p_1598": "Hitler, Adolf",
+    "p_2467": "Müller, Georg",
+    "p_2588": "Nijinsky, Vaslav",
+    "p_2225": "Mahler, Gustav",
+    "p_3204": "Schlee, Alfred",
+    "p_3215": "Schmied",
+    "p_1037": "Eyken, Heinrich van",
+    "p_3699": "Stock, Friedrich",
+    "p_3105": "Scarpini, Pietro",
+    "p_3226": "Schmitt, Saladin",
+    "p_3468": "Shakespeare, William",
+    "p_3237": "Schnabel, Arthur",
+    "p_3127": "Schenker, Heinrich",
+    "p_3028": "Ropartz, Joseph Guy",
+    "p_1962": "Kopsch, Julius",
+    "p_2820": "Popper",
+    "p_1610": "Hofmannsthal, Hugo von",
+    "p_1852": "Khuner, Felix",
+    "p_1973": "Körner, Theodor",
+    "p_1500": "Haydn, Joseph",
+    "p_2600": "Nikisch, Arthur",
+    "p_2842": "Prüwer, Julius",
+    "p_2963": "Respighi, Ottorino",
+    "p_2974": "Riemann, Hugo",
+    "p_1885": "Klemperer, Otto",
+    "p_2743": "Perscheid, Nicola",
+    "p_1302": "Gräner, Georg",
+    "p_3854": "Thuille, Ludwig",
+    "p_2765": "Pfitzner, Hans",
+    "p_1676": "Indy, Vincent d’",
+    "p_3612": "Stein, Erwin",
+    "p_1566": "Heuberger, Richard",
+    "p_3502": "Simon, James",
+    "p_3755": "Strauß, Johann",
+    "p_3997": "Wassermann, Jakob",
+    "p_2787": "Pirchan, Emil",
+    "p_3513": "Simon",
+    "p_3634": "Stein, Robert",
+    "p_2435": "Monn, Matthias Georg",
+    "p_1115": "Friedmann, Hermann",
+    "p_3425": "Seebach, Nikolaus Graf von",
+    "p_2105": "Lazar, Eugen",
+    "p_3557": "Soot, Friedrich Wilhelm",
+    "p_3568": "Specht, Richard",
+    "p_3689": "Stiedry-Wagner, Erika",
+    "p_3216": "Schmitt, Florent",
+    "p_2369": "Meyerbeer, Giacomo",
+    "p_3106": "Schalk, Franz",
+    "p_2149": "Levetzow, Karl Michael von",
+    "p_4239": "Wolff, Hermann",
+    "p_3910": "Van der Stucken, Frank",
+    "p_2821": "Posa, Oskar C.",
+    "p_2942": "Reines, Siegfried",
+    "p_1974": "Korngold, Erich Wolfgang",
+    "p_2832": "Prunières, Henry",
+    "p_3932": "Voigt, Ernest R.",
+    "p_2854": "Pujmann, Ferdinand",
+    "p_1886": "Klein, Arthur",
+    "p_3833": "Taubmann, Otto",
+    "p_2865": "Randall, Ray",
+    "p_1303": "Graener, Paul",
+    "p_2755": "Pesta, Theodor",
+    "p_2645": "Očadlík, Mirko",
+    "p_3987": "Warburg, Felix Moritz",
+    "p_2898": "Rebner, Adolf",
+    "p_3624": "Stein, Leonard",
+    "p_3877": "Tompkins, Merrit E.",
+    "p_3514": "Simons, Rainer",
+    "p_3635": "Kemperling, Paula",
+    "p_1105": "Freund, Marya",
+    "p_2799": "Pizzetti, Ildebrando",
+    "p_3525": "Smyth, Ethel",
+    "p_3536": "Sobernheim, Curt",
+    "p_2106": "Leibowitz, René",
+    "p_3206": "Schmid, Josef",
+    "p_3448": "Heuduck, Carola",
+    "p_2128": "Leonard, Alfons",
+    "p_1832": "Keller, Gottfried",
+    "p_2932": "Reiner, Fritz",
+    "p_2943": "Reinhardt, Max",
+    "p_1623": "Horenstein, Jascha",
+    "p_1634": "Hörth, Franz Ludwig",
+    "p_1876": "Kittel, Bruno",
+    "p_2503": "Nadel, Arno",
+    "p_2866": "Randall, Margaret",
+    "p_2635": "Nussio, Otmar",
+    "p_1425": "Halbhuber, Alfred",
+    "p_3614": "Stein, Markus",
+    "p_3999": "Waschmann, Karl",
+    "p_3636": "Sax, Emma von",
+    "p_1348": "Gray, Cecil",
+    "p_1238": "Gmeindl, Walther",
+    "p_2327": "Mendelssohn, Franz von",
+    "p_1128": "Frisch, Efraim",
+    "p_2459": "Mooser, Robert-Aloys",
+    "p_1249": "Göhler, Georg",
+    "p_2107": "Lebert, Anna",
+    "p_3207": "Schmid-Bloss, Karl",
+    "p_3339": "Schuch, Ernst Gottfried von",
+    "p_2129": "Lert, Ernst",
+    "p_1701": "Jalowetz, Johanna",
+    "p_1712": "Jarnach, Philipp",
+    "p_3901": "Turnau, Josef",
+    "p_1734": "Juon, Paul",
+    "p_3802": "Szell, George",
+    "p_3934": "Vuillermoz, Émile",
+    "p_2966": "Réti, Rudolf",
+    "p_3945": "Wagner, Hans",
+    "p_2735": "Pella, Paul",
+    "p_2856": "Rabaud, Henri",
+    "p_1536": "Heller, Adolf",
+    "p_2999": "Röhr, Hugo",
+    "p_1206": "Geidel, Johannes",
+    "p_3879": "Toch, Ernst",
+    "p_3637": "Winger, Helene",
+    "p_1228": "Giraud, Albert",
+    "p_1349": "Grossi, Pietro",
+    "p_2207": "Loriod, Yvonne",
+    "p_2328": "Mendelssohn, Arnold",
+    "p_3549": "Sonderling, Jacob",
+    "p_4209": "Wolf, Hugo",
+    "p_1702": "Jalowetz, Heinrich",
+    "p_2923": "Reich, Willi",
+    "p_1834": "Kestenberg, Leo",
+    "p_2813": "Polatschek, Viktor",
+    "p_1845": "Keußler, Gerhard von",
+    "p_1856": "Kiesewetter, Raphael Georg",
+    "p_3924": "Vandelle, Armand",
+    "p_2835": "Prohaska, Carl",
+    "p_2725": "Pedrollo, Arrigo",
+    "p_1515": "Heger, Robert",
+    "p_1757": "Kaltenborn, Fritz",
+    "p_3946": "Wagner, Richard",
+    "p_1537": "Heller, Rudolf",
+    "p_2989": "Robitschek, Adolf",
+    "p_2758": "Peters, Friedrich",
+    "p_1548": "Herz, Henri",
+    "p_3627": "Stein, Sofie",
+    "p_1339": "Greissle, Felix",
+    "p_3407": "Schuschnigg, Kurt Alois Josef Johann",
+    "p_2208": "Louis, Rudolf",
+    "p_3319": "Schreker, Maria",
+    "p_4309": "Zemlinsky, Alexander",
+    "p_1901": "Klenau, Paul von",
+    "p_1923": "Koblitz, Milton S.",
+    "p_1604": "Hofbauer, A.",
+    "p_1615": "Holle, Hugo",
+    "p_3925": "Violin, Moriz",
+    "p_1868": "Kindler, Hans",
+    "p_1758": "Kaminski, Heinrich",
+    "p_1538": "Hertzka, Emil",
+    "p_2869": "Ranz",
+    "p_3969": "Waldbauer, Imre",
+    "p_2759": "Petri, Henri",
+    "p_1704": "Guermonprez, Trude",
+    "p_2815": "Pollak, Egon",
+    "p_1737": "Kabasta, Oswald",
+    "p_3827": "Taube, Michael",
+    "p_1649": "Hüe, Georges",
+    "p_1539": "Hertzka, Yella",
+    "p_2518": "Nedbal, Oskar",
+    "p_1209": "George, Stefan",
+    "p_2309": "Materassi, Sandro",
+    "p_1914": "Klitsch, Wilhelm",
+    "p_1804": "Karbach, Friedrich",
+    "p_1925": "Kodály, Zoltán",
+    "p_1815": "Kattnigg, Rudolf",
+    "p_1947": "Kolisch, Rudolf",
+    "p_1958": "Königer, Paul",
+    "p_1727": "Judson, Arthur",
+    "p_2706": "Papst, Eugen",
+    "p_2959": "Reinhart, Werner",
+    "p_3817": "Szervansky, Peter",
+    "p_1518": "Hegner, Annemarie",
+    "p_2618": "Novák, Vítězslav",
+    "p_1408": "Hába, Alois",
+    "p_1926": "Koennecke, Richard",
+    "p_2905": "Reger, Max",
+    "p_1948": "Kolisch, Josefa",
+    "p_3906": "Uher, Willy",
+    "p_2817": "Polnauer, Josef",
+    "p_1607": "Hofer",
+    "p_2828": "Prager, Artur",
+    "p_1618": "Honegger, Arthur",
+    "p_2718": "Pasetti-Friedenburg, Otto von",
+    "p_3818": "Talich, Václav",
+    "p_1519": "Heinecke, Paul",
+    "p_3719": "Stokowski, Leopold",
+    "p_291": "Balan, Benno",
+    "p_1806": "Karpath, Ludwig",
+    "p_3907": "Unzeitig, Viktor",
+    "p_1608": "Hoffmann, Richard",
+    "p_3709": "Stöhr, Richard",
+    "p_281": "Back, Grete",
+    "p_1609": "Holländer, Gustav",
+    "p_282": "Bahr, Hermann",
+    "p_1929": "Kokoschka, Oskar",
+    "p_151": "Ansorge, Conrad",
+    "p_272": "Bach, David Josef",
+    "p_294": "Bandler, Heinrich",
+    "p_680": "Capellen, Georg",
+    "p_460": "Blech, Leo"
+  }
+
+const mapIdToWork = {
+    "werke.121": {
+      "authors": { 
+        "p_4309": "Zemlinsky, Alexander" },
+      "title": "Streichquartett Nr. 2 op. 15",
+      "type": "Werke"
+    },
+    "werke.132": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Acht Lieder für eine Singstimme und Klavier op. 6",
+      "type": "Werke"
+    },
+    "werke.143": {
+      "authors": { 
+        "p_3750": "Strauss, Richard" },
+      "title": "Elektra. Tragödie in einem Aufzuge op. 58",
+      "type": "Werke"
+    },
+    "werke.154": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Kammersymphonie Nr. 1. Bearbeitung für Orchester",
+      "type": "Bearbeitungen"
+    },
+    "werke.165": {
+      "authors": { 
+        "p_647": "Busoni, Ferruccio" },
+      "title": "Tanz-Walzer op. 53",
+      "type": "Werke"
+    },
+    "werke.176": {
+      "authors": {  },
+      "title": "L'Africaine. Klavierauszug",
+      "type": "Bearbeitungen"
+    },
+    "werke.187": {
+      "authors": {  },
+      "title": "Messe D 950. Klavierauszug",
+      "type": "Bearbeitungen"
+    },
+    "werke.198": {
+      "authors": { 
+        "p_3453": "Ševčík, Otakar" },
+      "title": "Triller-Vorstudien und Ausbildung des Finger-Anschlages für Violine op. 7",
+      "type": "Werke"
+    },
+    "schriften.80": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Brief an die U. E.",
+      "type": "Schriften"
+    },
+    "schriften.91": {
+      "authors": {  },
+      "title": "Gurre-Lieder",
+      "type": "Schriften"
+    },
+    "werke.122": {
+      "authors": { 
+        "p_4332": "Zillig, Winfried" },
+      "title": "Das Opfer op. 19",
+      "type": "Werke"
+    },
+    "werke.133": {
+      "authors": { 
+        "p_1037": "Eyken, Heinrich van" },
+      "title": "Lied der Walküre op. 16 Nr. 2",
+      "type": "Werke"
+    },
+    "werke.144": {
+      "authors": { 
+        "p_3750": "Strauss, Richard" },
+      "title": "Salome. Musikdrama in einem Aufzuge op. 54",
+      "type": "Werke"
+    },
+    "werke.155": {
+      "authors": { 
+        "p_543": "Brahms, Johannes" },
+      "title": "Deutsche Volkslieder WoO 33",
+      "type": "Werke"
+    },
+    "werke.166": {
+      "authors": { 
+        "p_1618": "Honegger, Arthur" },
+      "title": "Pastorale d’été",
+      "type": "Werke"
+    },
+    "werke.177": {
+      "authors": {  },
+      "title": "Robert le diable. Klavierauszug",
+      "type": "Bearbeitungen"
+    },
+    "werke.188": {
+      "authors": { 
+        "p_971": "Eisler, Hanns" },
+      "title": "Sonate für Klavier op. 1",
+      "type": "Werke"
+    },
+    "werke.199": {
+      "authors": { 
+        "p_3453": "Ševčík, Otakar" },
+      "title": "Doppelgriff-Vorstudien in Terzen, Sexten, Oktaven und Dezimen für Violine op. 9",
+      "type": "Werke"
+    },
+    "werke.1": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vier Lieder für eine Singstimme und Klavier op. 2",
+      "type": "Werke"
+    },
+    "schriften.70": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Křenek für leichte Musik",
+      "type": "Schriften"
+    },
+    "schriften.81": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vorwort zum Führer durch die Harmonielehre von Erwin Stein",
+      "type": "Schriften"
+    },
+    "schriften.92": {
+      "authors": { 
+        "p_2031": "Kraus, Karl" },
+      "title": "Die Unüberwindlichen",
+      "type": "Schriften"
+    },
+    "werke.210": {
+      "authors": { 
+        "p_4001": "Webern, Anton" },
+      "title": "Sechs Stücke für großes Orchester op. 6",
+      "type": "Werke"
+    },
+    "werke.100": {
+      "authors": { 
+        "p_2053": "Krenek, Ernst" },
+      "title": "Karl V. op. 73",
+      "type": "Werke"
+    },
+    "werke.111": {
+      "authors": { 
+        "p_2394": "Milhaud, Darius" },
+      "title": "Sérénade en trois parties op. 62",
+      "type": "Werke"
+    },
+    "werke.123": {
+      "authors": { 
+        "p_2225": "Mahler, Gustav" },
+      "title": "Das Lied von der Erde",
+      "type": "Werke"
+    },
+    "werke.134": {
+      "authors": { 
+        "p_1037": "Eyken, Heinrich van" },
+      "title": "Ikarus op. 26",
+      "type": "Werke"
+    },
+    "werke.145": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Suite im alten Stile für Streichorchester",
+      "type": "Werke"
+    },
+    "werke.156": {
+      "authors": { 
+        "p_2257": "Malipiero, Gian Francesco" },
+      "title": "Stornelli e ballate (Streichquartett Nr. 2)",
+      "type": "Werke"
+    },
+    "werke.167": {
+      "authors": { 
+        "p_1618": "Honegger, Arthur" },
+      "title": "Pacific 2.3.1",
+      "type": "Werke"
+    },
+    "werke.178": {
+      "authors": {  },
+      "title": "Fra Diavolo ou L’Hôtellerie de Terracine. Klavierauszug",
+      "type": "Bearbeitungen"
+    },
+    "werke.189": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Pierrot lunaire. Dreimal sieben Gedichte aus Albert Girauds „Lieder des Pierrot Lunaire“ op. 21",
+      "type": "Werke"
+    },
+    "werke.2": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Kammersymphonie für 15 Solo-Instrumente op. 9",
+      "type": "Werke"
+    },
+    "schriften.60": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Zu Casellas Aufsatz „Scarlattiana“",
+      "type": "Schriften"
+    },
+    "schriften.71": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Ueber Metronomisierung",
+      "type": "Schriften"
+    },
+    "schriften.82": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Herr Prof. Lach (an der Wiener Universität für Musikgeschichte",
+      "type": "Schriften"
+    },
+    "schriften.93": {
+      "authors": { 
+        "p_2149": "Levetzow, Karl Michael von" },
+      "title": "Die heilige Ente",
+      "type": "Schriften"
+    },
+    "werke.200": {
+      "authors": { 
+        "p_1339": "Greissle, Felix" },
+      "title": "Kammersymphonie für 15 Solo-Instrumente op. 9. Klavierauszug zu vier Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.211": {
+      "authors": { 
+        "p_3256": "Schnirlin, Ossip" },
+      "title": "Der neue Weg zur Beherrschung der gesamten Violin-Literatur",
+      "type": "Werke"
+    },
+    "werke.101": {
+      "authors": { 
+        "p_2053": "Krenek, Ernst" },
+      "title": "Der Diktator op. 49",
+      "type": "Werke"
+    },
+    "werke.112": {
+      "authors": { 
+        "p_2445": "Monteverdi, Claudio" },
+      "title": "L'Arianna",
+      "type": "Werke"
+    },
+    "werke.124": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Streichseptett",
+      "type": "Werke"
+    },
+    "werke.135": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Begleitmusik zu einer Lichtspielszene op. 34",
+      "type": "Werke"
+    },
+    "werke.146": {
+      "authors": { 
+        "p_3612": "Stein, Erwin" },
+      "title": "Gurre-Lieder für Soli, Chor und Orchester. Reduzierte Orchesterbesetzung",
+      "type": "Bearbeitungen"
+    },
+    "werke.157": {
+      "authors": { 
+        "p_2761": "Petyrek, Felix Karl August" },
+      "title": "Sechs groteske Klavierstücke",
+      "type": "Werke"
+    },
+    "werke.168": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Kammerkonzert für Klavier und Geige mit Begleitung von dreizehn Bläsern",
+      "type": "Werke"
+    },
+    "werke.179": {
+      "authors": {  },
+      "title": "Les Deux Journées, ou Le Porteur d’eau. Klavierauszug",
+      "type": "Bearbeitungen"
+    },
+    "werke.3": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Kammersymphonie op. 9b. Bearbeitung für großes Orchester",
+      "type": "Bearbeitungen"
+    },
+    "schriften.50": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Gustav Mahler",
+      "type": "Schriften"
+    },
+    "schriften.61": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "[Rundfrage: Gibt es eine Krise der Oper?]",
+      "type": "Schriften"
+    },
+    "schriften.72": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "zu Metronomisierung",
+      "type": "Schriften"
+    },
+    "schriften.83": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Kreneks „gehaltener“ Vortrag",
+      "type": "Schriften"
+    },
+    "schriften.94": {
+      "authors": { 
+        "p_2696": "Pappenheim-Frischauf, Marie von" },
+      "title": "Erwartung",
+      "type": "Schriften"
+    },
+    "werke.201": {
+      "authors": { 
+        "p_688": "Casella, Alfredo" },
+      "title": "Undici pezzi infantili op. 35",
+      "type": "Werke"
+    },
+    "werke.102": {
+      "authors": { 
+        "p_2053": "Krenek, Ernst" },
+      "title": "Das geheime Königreich op. 50",
+      "type": "Werke"
+    },
+    "werke.113": {
+      "authors": { 
+        "p_3301": "Schreker, Franz" },
+      "title": "Der ferne Klang",
+      "type": "Werke"
+    },
+    "werke.125": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Lied der Walküre op. 16 Nr. 2. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.136": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Der Wein",
+      "type": "Werke"
+    },
+    "werke.147": {
+      "authors": { 
+        "p_3612": "Stein, Erwin" },
+      "title": "Pelleas und Melisande. Symphonische Dichtung für Orchester op. 5. Reduzierte Fassung",
+      "type": "Bearbeitungen"
+    },
+    "werke.158": {
+      "authors": { 
+        "p_4048": "Weill, Kurt" },
+      "title": "Der neue Orpheus op. 16",
+      "type": "Werke"
+    },
+    "werke.169": {
+      "authors": { 
+        "p_1238": "Gmeindl, Walther" },
+      "title": "Drei Orchesterstücke op. 12",
+      "type": "Werke"
+    },
+    "werke.4": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Klavierquartett g-Moll op. 25. Bearbeitung für großes Orchester",
+      "type": "Bearbeitungen"
+    },
+    "schriften.40": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Tonality and Form",
+      "type": "Schriften"
+    },
+    "schriften.51": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Conviction ou Connaissance",
+      "type": "Schriften"
+    },
+    "schriften.62": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Anerkennung",
+      "type": "Schriften"
+    },
+    "schriften.73": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Metronomisierung",
+      "type": "Schriften"
+    },
+    "schriften.84": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Die Universal Edition | Ergänzungen zu meinem Briefwechsel",
+      "type": "Schriften"
+    },
+    "schriften.95": {
+      "authors": { 
+        "p_3127": "Schenker, Heinrich" },
+      "title": "Von der Sendung des deutschen Genies",
+      "type": "Schriften"
+    },
+    "werke.202": {
+      "authors": { 
+        "p_688": "Casella, Alfredo" },
+      "title": "Cinque pezzi op. 34",
+      "type": "Werke"
+    },
+    "werke.103": {
+      "authors": { 
+        "p_2053": "Krenek, Ernst" },
+      "title": "Schwergewicht oder Die Ehre der Nation op. 55",
+      "type": "Werke"
+    },
+    "werke.114": {
+      "authors": { 
+        "p_3301": "Schreker, Franz" },
+      "title": "Das Spielwerk und die Prinzessin",
+      "type": "Werke"
+    },
+    "werke.126": {
+      "authors": { 
+        "p_2225": "Mahler, Gustav" },
+      "title": "Sinfonie Nr. 5",
+      "type": "Werke"
+    },
+    "werke.137": {
+      "authors": { 
+        "p_3750": "Strauss, Richard" },
+      "title": "Sechs Lieder op. 56",
+      "type": "Werke"
+    },
+    "werke.148": {
+      "authors": { 
+        "p_1339": "Greissle, Felix" },
+      "title": "Sonate nach dem Bläserquintett op. 26. Bearbeitung für Violine (Flöte) und Klavier",
+      "type": "Bearbeitungen"
+    },
+    "werke.159": {
+      "authors": { 
+        "p_4048": "Weill, Kurt" },
+      "title": "Frauentanz. Sieben Gedichte des Mittelalters op. 10",
+      "type": "Werke"
+    },
+    "werke.5": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Pelleas und Melisande. Symphonische Dichtung für Orchester op. 5",
+      "type": "Werke"
+    },
+    "schriften.30": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Formenlehre",
+      "type": "Schriften"
+    },
+    "schriften.41": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Gesinnung oder Erkenntnis?",
+      "type": "Schriften"
+    },
+    "schriften.52": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vortrag zur Einführung in die Glückliche Hand",
+      "type": "Schriften"
+    },
+    "schriften.63": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vorwort zu Weberns kleinen Quartettstücken",
+      "type": "Schriften"
+    },
+    "schriften.74": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Glossen zu den Theorien anderer",
+      "type": "Schriften"
+    },
+    "schriften.85": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Agenda Moderne",
+      "type": "Schriften"
+    },
+    "schriften.96": {
+      "authors": { 
+        "p_3568": "Specht, Richard" },
+      "title": "Gustav Mahlers VIII. Symphonie.",
+      "type": "Schriften"
+    },
+    "werke.203": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Lagunen-Walzer op. 411 von Johann Strauß. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.104": {
+      "authors": { 
+        "p_2053": "Krenek, Ernst" },
+      "title": "Potpourri op. 54",
+      "type": "Werke"
+    },
+    "werke.115": {
+      "authors": { 
+        "p_3301": "Schreker, Franz" },
+      "title": "Der singende Teufel",
+      "type": "Werke"
+    },
+    "werke.127": {
+      "authors": { 
+        "p_3972": "Walter, Bruno" },
+      "title": "Klavierquintett",
+      "type": "Werke"
+    },
+    "werke.138": {
+      "authors": { 
+        "p_2905": "Reger, Max" },
+      "title": "Sinfonietta op. 90",
+      "type": "Werke"
+    },
+    "werke.149": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Violinkonzert",
+      "type": "Werke"
+    },
+    "werke.6": {
+      "authors": { 
+        "p_1702": "Jalowetz, Heinrich" },
+      "title": "Pelleas und Melisande. Symphonische Dichtung für Orchester op. 5. Klavierauszug zu vier Händen",
+      "type": "Bearbeitungen"
+    },
+    "schriften.20": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vielseitigkeit",
+      "type": "Schriften"
+    },
+    "schriften.31": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Zusammenhang, Kontrapunkt, Instrumentation, Formenlehre",
+      "type": "Schriften"
+    },
+    "schriften.42": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Mechanische Musikinstrumente",
+      "type": "Schriften"
+    },
+    "schriften.53": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Method of composing with 12 tones which are only related with one another",
+      "type": "Schriften"
+    },
+    "schriften.64": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Für Franz Schreker",
+      "type": "Schriften"
+    },
+    "schriften.75": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Glossen zu Redlich",
+      "type": "Schriften"
+    },
+    "schriften.86": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Meine Notenschreibmaschine",
+      "type": "Schriften"
+    },
+    "schriften.97": {
+      "authors": { 
+        "p_3612": "Stein, Erwin" },
+      "title": "Praktischer Leitfaden zu Schönbergs Harmonielehre",
+      "type": "Schriften"
+    },
+    "werke.204": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Kaiser-Walzer op. 437. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.105": {
+      "authors": { 
+        "p_2225": "Mahler, Gustav" },
+      "title": "Sinfonie Nr. 2",
+      "type": "Werke"
+    },
+    "werke.116": {
+      "authors": { 
+        "p_3301": "Schreker, Franz" },
+      "title": "Vom ewigen Leben",
+      "type": "Werke"
+    },
+    "werke.128": {
+      "authors": { 
+        "p_2283": "Marschalk, Max" },
+      "title": "Sturmlied für gemischten Chor und Orchester",
+      "type": "Werke"
+    },
+    "werke.139": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Sechs Stücke für Männerchor op. 35",
+      "type": "Werke"
+    },
+    "werke.7": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Erwartung. Monodram in einem Akt op. 17",
+      "type": "Werke"
+    },
+    "schriften.10": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Totentanz der Prinzipien",
+      "type": "Schriften"
+    },
+    "schriften.21": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Der neue Klassizismus. Eine kleine Kantate",
+      "type": "Schriften"
+    },
+    "schriften.32": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Die Lehre vom Zusammenhang",
+      "type": "Schriften"
+    },
+    "schriften.43": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vorwort zu den drei Satiren",
+      "type": "Schriften"
+    },
+    "schriften.54": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "How can a Music Student Earn a Living?",
+      "type": "Schriften"
+    },
+    "schriften.65": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Berichtigung",
+      "type": "Schriften"
+    },
+    "schriften.76": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Krenek: Fortschritt und Reaktion",
+      "type": "Schriften"
+    },
+    "schriften.87": {
+      "authors": {  },
+      "title": "Séraphita",
+      "type": "Schriften"
+    },
+    "werke.90": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Symphonische Stücke aus der Oper „Lulu“",
+      "type": "Werke"
+    },
+    "schriften.98": {
+      "authors": { 
+        "p_3709": "Stöhr, Richard" },
+      "title": "Praktischer Leitfaden der Harmonielehre.",
+      "type": "Schriften"
+    },
+    "werke.205": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Rosen aus dem Süden op. 388. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.106": {
+      "authors": { 
+        "p_2225": "Mahler, Gustav" },
+      "title": "Sinfonie Nr. 3",
+      "type": "Werke"
+    },
+    "werke.117": {
+      "authors": { 
+        "p_3612": "Stein, Erwin" },
+      "title": "Andante für Klavier",
+      "type": "Werke"
+    },
+    "werke.129": {
+      "authors": { 
+        "p_1734": "Juon, Paul" },
+      "title": "Streichquartett Nr. 2 op. 29",
+      "type": "Werke"
+    },
+    "werke.8": {
+      "authors": { 
+        "p_3662": "Steuermann, Eduard" },
+      "title": "Erwartung. Monodram in einem Akt op. 17. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "schriften.11": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Requiem",
+      "type": "Schriften"
+    },
+    "schriften.22": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Ein Spruch und zwei Variationen über ihn",
+      "type": "Schriften"
+    },
+    "schriften.33": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Der musikalische Gedanke",
+      "type": "Schriften"
+    },
+    "schriften.44": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Eine sehr lehrreiche Rede Felix Mottls",
+      "type": "Schriften"
+    },
+    "schriften.55": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Composition with Twelve Tones",
+      "type": "Schriften"
+    },
+    "schriften.110": {
+      "authors": { 
+        "p_3297": "Schönberg, Gertrud" },
+      "title": "Von heute auf morgen. Oper in einem Akt op. 32",
+      "type": "Schriften"
+    },
+    "schriften.66": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "[Erklärung]",
+      "type": "Schriften"
+    },
+    "schriften.77": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Tiefe",
+      "type": "Schriften"
+    },
+    "schriften.88": {
+      "authors": { 
+        "p_375": "Bellermann, Heinrich" },
+      "title": "Der Contrapunkt",
+      "type": "Schriften"
+    },
+    "werke.91": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Lulu",
+      "type": "Werke"
+    },
+    "schriften.99": {
+      "authors": { 
+        "p_3854": "Thuille, Ludwig",
+        "p_2208": "Louis, Rudolf" },
+      "title": "Harmonielehre",
+      "type": "Schriften"
+    },
+    "werke.206": {
+      "authors": { 
+        "p_3301": "Schreker, Franz" },
+      "title": "Vorspiel zu einem Drama",
+      "type": "Werke"
+    },
+    "werke.107": {
+      "authors": { 
+        "p_2225": "Mahler, Gustav" },
+      "title": "Sinfonie Nr. 8",
+      "type": "Werke"
+    },
+    "werke.118": {
+      "authors": { 
+        "p_3946": "Wagner, Richard" },
+      "title": "Siegfried",
+      "type": "Werke"
+    },
+    "werke.9": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Drei Klavierstücke op. 11",
+      "type": "Werke"
+    },
+    "schriften.12": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Die Jakobsleiter",
+      "type": "Schriften"
+    },
+    "schriften.23": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Legitimation als Kanon",
+      "type": "Schriften"
+    },
+    "schriften.34": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Parsifal und Urheberrecht",
+      "type": "Schriften"
+    },
+    "schriften.45": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Interview mit mir selbst",
+      "type": "Schriften"
+    },
+    "schriften.100": {
+      "authors": { 
+        "p_3925": "Violin, Moriz" },
+      "title": "Über das sogenannte Continuo.",
+      "type": "Schriften"
+    },
+    "schriften.56": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Zu meinem 50. Geburtstag",
+      "type": "Schriften"
+    },
+    "schriften.111": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Das Verhältnis zum Text",
+      "type": "Schriften"
+    },
+    "schriften.67": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Entwurf einer Musikzeitung",
+      "type": "Schriften"
+    },
+    "werke.70": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Kammersymphonie für 15 Solo-Instrumente op. 9. Klavierauszug zu vier Händen",
+      "type": "Bearbeitungen"
+    },
+    "schriften.1": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Harmonielehre",
+      "type": "Schriften"
+    },
+    "schriften.78": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Gegen die Räuberplage",
+      "type": "Schriften"
+    },
+    "werke.81": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Ständchen D 957\/4 [verschollen]. ",
+      "type": "Bearbeitungen"
+    },
+    "schriften.89": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Arnold Schönberg. Gurrelieder. Führer",
+      "type": "Schriften"
+    },
+    "werke.92": {
+      "authors": { 
+        "p_602": "Bruckner, Anton" },
+      "title": "Sinfonie Nr. 9 WAB 109",
+      "type": "Werke"
+    },
+    "werke.207": {
+      "authors": { 
+        "p_4035": "Weigl, Karl" },
+      "title": "Sieben Gesänge für tiefe Männerstimme und Klavier op. 1",
+      "type": "Werke"
+    },
+    "werke.108": {
+      "authors": { 
+        "p_2225": "Mahler, Gustav" },
+      "title": "Sinfonie Nr. 9",
+      "type": "Werke"
+    },
+    "werke.119": {
+      "authors": { 
+        "p_4048": "Weill, Kurt" },
+      "title": "Royal Palace op. 17",
+      "type": "Werke"
+    },
+    "schriften.13": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Moses und Aron",
+      "type": "Schriften"
+    },
+    "schriften.24": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Beiträge zu einem geplanten Abbruch",
+      "type": "Schriften"
+    },
+    "schriften.35": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Warum neue Melodien schwer verständlich sind",
+      "type": "Schriften"
+    },
+    "schriften.46": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Problems of Harmony",
+      "type": "Schriften"
+    },
+    "schriften.101": {
+      "authors": { 
+        "p_1209": "George, Stefan" },
+      "title": "Die Bücher der Hirten- und Preisgedichte der Sagen und Sänge und der hängenden Gärten",
+      "type": "Schriften"
+    },
+    "schriften.57": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Fragen von Jens Quer",
+      "type": "Schriften"
+    },
+    "werke.60": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vier Stücke für gemischten Chor op. 27",
+      "type": "Werke"
+    },
+    "schriften.112": {
+      "authors": { 
+        "p_312": "Becker, Hugo",
+        "p_3086": "Rynar, Dago" },
+      "title": "Mechanik und Ästhetik des Violoncellspiels",
+      "type": "Schriften"
+    },
+    "schriften.68": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Entwurf. Statuten des Mahlerbundes",
+      "type": "Schriften"
+    },
+    "werke.71": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Kol nidre op. 39",
+      "type": "Werke"
+    },
+    "schriften.79": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vereinigung der Autoren der Universal Edition",
+      "type": "Schriften"
+    },
+    "werke.82": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Die Post, Nr. 13 aus „Die Winterreise“ D 922 [verschollen]. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.93": {
+      "authors": { 
+        "p_647": "Busoni, Ferruccio" },
+      "title": "Turandot. Eine chinesische Fabel",
+      "type": "Werke"
+    },
+    "werke.208": {
+      "authors": { 
+        "p_4035": "Weigl, Karl" },
+      "title": "Sechs Lieder von Otto Julius Bierbaum für eine hohe Singstimme",
+      "type": "Werke"
+    },
+    "werke.109": {
+      "authors": { 
+        "p_2225": "Mahler, Gustav" },
+      "title": "Kindertotenlieder",
+      "type": "Werke"
+    },
+    "schriften.14": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Der biblische Weg",
+      "type": "Schriften"
+    },
+    "schriften.25": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Models for Beginners in Composition",
+      "type": "Schriften"
+    },
+    "schriften.36": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Die vereinfachte Studier- und Dirigier-Partitur",
+      "type": "Schriften"
+    },
+    "schriften.47": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vorwort zu op. 27 und 28 (unbenützt)",
+      "type": "Schriften"
+    },
+    "werke.50": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Die glückliche Hand. Drama mit Musik op. 18",
+      "type": "Werke"
+    },
+    "schriften.102": {
+      "authors": { 
+        "p_1856": "Kiesewetter, Raphael Georg" },
+      "title": "Geschichte der europäisch-abendländischen oder unserer heutigen Musik",
+      "type": "Schriften"
+    },
+    "schriften.58": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Jens Quer meldet sich wieder",
+      "type": "Schriften"
+    },
+    "werke.61": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Drei Satiren für gemischten Chor op. 28",
+      "type": "Werke"
+    },
+    "schriften.113": {
+      "authors": {  },
+      "title": "Diplomat",
+      "type": "Schriften"
+    },
+    "schriften.69": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Nachpfeifen",
+      "type": "Schriften"
+    },
+    "werke.72": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Ode to Napoleon Buonaparte op. 41",
+      "type": "Werke"
+    },
+    "schriften.3": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Versuch eines Nachrufs für Herzka",
+      "type": "Schriften"
+    },
+    "werke.83": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Suleika I (Was bedeutet die Bewegung) D 720 [verschollen]. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.94": {
+      "authors": { 
+        "p_1303": "Graener, Paul" },
+      "title": "Don Juans letztes Abenteuer",
+      "type": "Werke"
+    },
+    "werke.209": {
+      "authors": { 
+        "p_2283": "Marschalk, Max" },
+      "title": "Aukassin und Nikolete",
+      "type": "Werke"
+    },
+    "schriften.15": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Gemischte Chöre",
+      "type": "Schriften"
+    },
+    "schriften.26": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Fundamentals of Musical Composition",
+      "type": "Schriften"
+    },
+    "schriften.37": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Gewissheit",
+      "type": "Schriften"
+    },
+    "werke.40": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Der Barbier von Sevilla. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "schriften.48": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Jens Quer interpelliert Arnold Schönberg",
+      "type": "Schriften"
+    },
+    "werke.51": {
+      "authors": { 
+        "p_3662": "Steuermann, Eduard" },
+      "title": "Die glückliche Hand. Drama mit Musik op. 18. Klavierauszug zu vier Händen",
+      "type": "Bearbeitungen"
+    },
+    "schriften.103": {
+      "authors": { 
+        "p_4001": "Webern, Anton" },
+      "title": "Ueber Arnold Schönberg",
+      "type": "Schriften"
+    },
+    "schriften.59": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Studierziffern",
+      "type": "Schriften"
+    },
+    "werke.62": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Suite op. 29",
+      "type": "Werke"
+    },
+    "schriften.114": {
+      "authors": { 
+        "p_2031": "Kraus, Karl" },
+      "title": "Der Punkt",
+      "type": "Schriften"
+    },
+    "werke.73": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Ode to Napoleon Buonaparte op. 41. Einrichtung für Streichorchester, Klavier und Sprecher",
+      "type": "Bearbeitungen"
+    },
+    "werke.84": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Suleika II (Ach, um deine feuchten Schwingen) D 717 [verschollen]. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.95": {
+      "authors": { 
+        "p_1597": "Hoérée, Arthur" },
+      "title": "Six poèmes",
+      "type": "Werke"
+    },
+    "schriften.16": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Unentrinnbar",
+      "type": "Schriften"
+    },
+    "schriften.27": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Structural Functions of Harmony",
+      "type": "Schriften"
+    },
+    "werke.30": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Schmücke Dich, o liebe Seele. Choralvorspiel BWV 654",
+      "type": "Bearbeitungen"
+    },
+    "schriften.38": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Die Zukunft der Orchesterinstrumente",
+      "type": "Schriften"
+    },
+    "werke.41": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Sechs Lieder für eine mittlere Singstimme und Klavier op. 3",
+      "type": "Werke"
+    },
+    "schriften.49": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Ästhetik und Kompositionslehre",
+      "type": "Schriften"
+    },
+    "werke.52": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Sechs kleine Klavierstücke op. 19",
+      "type": "Werke"
+    },
+    "schriften.104": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Ein Musikinstitut",
+      "type": "Schriften"
+    },
+    "werke.63": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Streichquartett Nr. 3 op. 30",
+      "type": "Werke"
+    },
+    "schriften.115": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Arnold Schönberg. Kammersymphonie op. 9. Thematische Analyse",
+      "type": "Schriften"
+    },
+    "schriften.5": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Dichtungen, Texte, Sprüche, Aphorismen",
+      "type": "Schriften"
+    },
+    "werke.85": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Ouvertüre, Entr’acts und Ballets zum Drama „Rosamunde“ D 797. Klavierauszug zu vier Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.96": {
+      "authors": { 
+        "p_2053": "Krenek, Ernst" },
+      "title": "Toccata und Chaconne über den Choral „Ja ich glaub an Jesum Christum“ für Klavier op. 13",
+      "type": "Werke"
+    },
+    "schriften.17": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Du sollst nicht, du musst",
+      "type": "Schriften"
+    },
+    "werke.20": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Du Wunderliche Tove!. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "schriften.28": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Preliminary Exercises in Counterpoint",
+      "type": "Schriften"
+    },
+    "werke.31": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Komm, Gott, Schöpfer, Heiliger Geist. Choralvorspiel BWV 667",
+      "type": "Bearbeitungen"
+    },
+    "schriften.39": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Eine neue Zwölfton-Schrift",
+      "type": "Schriften"
+    },
+    "werke.42": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Streichquartett Nr. 1 op. 7",
+      "type": "Werke"
+    },
+    "werke.53": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Herzgewächse op. 20",
+      "type": "Werke"
+    },
+    "schriften.105": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Über Musikkritik",
+      "type": "Schriften"
+    },
+    "werke.64": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Variationen für Orchester op. 31",
+      "type": "Werke"
+    },
+    "schriften.116": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Pelleas und Melisande. (Nach dem Drama von Maurice Maeterlinck). Symphonische Dichung für Orchester von Arnold Schönberg. Op. 5. Kurze thematische Analyse von Alban Berg.",
+      "type": "Schriften"
+    },
+    "werke.75": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Concerto for Piano and Orchestra op. 42",
+      "type": "Werke"
+    },
+    "schriften.6": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Aphorismen im „Konzert-Taschenbuch“",
+      "type": "Schriften"
+    },
+    "werke.86": {
+      "authors": { 
+        "p_252": "Bach, Johann Sebastian" },
+      "title": "Sechs Sonaten BWV 525–530",
+      "type": "Werke"
+    },
+    "werke.97": {
+      "authors": { 
+        "p_2053": "Krenek, Ernst" },
+      "title": "Symphonische Musik op. 11",
+      "type": "Werke"
+    },
+    "werke.10": {
+      "authors": { 
+        "p_647": "Busoni, Ferruccio" },
+      "title": "Klavierstück op. 11 Nr. 2. Konzertmässige Interpretation",
+      "type": "Bearbeitungen"
+    },
+    "schriften.18": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Drei Satiren",
+      "type": "Schriften"
+    },
+    "werke.21": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Das Lied der Waldtaube. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "schriften.29": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Das Komponieren mit selbständigen Stimmen",
+      "type": "Schriften"
+    },
+    "werke.32": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Präludium und Fuge in Es-Dur für Orgel BWV 552. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.43": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Zwei Balladen für Gesang und Klavier op. 12",
+      "type": "Werke"
+    },
+    "werke.54": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Pierrot lunaire. Dreimal sieben Gedichte aus Albert Girauds „Lieder des Pierrot Lunaire“ op. 21",
+      "type": "Werke"
+    },
+    "schriften.106": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Rundschreiben an Freunde",
+      "type": "Schriften"
+    },
+    "werke.65": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Von heute auf morgen. Oper in einem Akt op. 32",
+      "type": "Werke"
+    },
+    "werke.76": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "String Trio op. 45",
+      "type": "Werke"
+    },
+    "schriften.7": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Texte",
+      "type": "Schriften"
+    },
+    "werke.87": {
+      "authors": { 
+        "p_331": "Beethoven, Ludwig van" },
+      "title": "Sinfonie Nr. 9 op. 125",
+      "type": "Werke"
+    },
+    "werke.98": {
+      "authors": { 
+        "p_2053": "Krenek, Ernst" },
+      "title": "Vier A-cappella-Chöre op. 47",
+      "type": "Werke"
+    },
+    "werke.11": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Sechs Lieder für Gesang und Orchester op. 8",
+      "type": "Werke"
+    },
+    "schriften.19": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Am Scheideweg",
+      "type": "Schriften"
+    },
+    "werke.22": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Das Lied der Waldtaube. Bearbeitung für Kammerorchester und Gesang",
+      "type": "Bearbeitungen"
+    },
+    "werke.33": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Adelaide op. 46 [verschollen]. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.44": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Friede auf Erden op. 13",
+      "type": "Werke"
+    },
+    "werke.55": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vier Lieder für Gesang und Orchester op. 22",
+      "type": "Werke"
+    },
+    "schriften.107": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Der Allgemeine Deutsche Musikverein",
+      "type": "Schriften"
+    },
+    "werke.66": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Klavierstück op. 33a",
+      "type": "Werke"
+    },
+    "werke.77": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "A Survivor from Warsaw op. 46",
+      "type": "Werke"
+    },
+    "schriften.8": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vorwort",
+      "type": "Schriften"
+    },
+    "werke.99": {
+      "authors": { 
+        "p_2053": "Krenek, Ernst" },
+      "title": "Jonny spielt auf op. 45",
+      "type": "Werke"
+    },
+    "werke.12": {
+      "authors": { 
+        "p_4001": "Webern, Anton" },
+      "title": "Sechs Lieder für Gesang und Orchester op. 8. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.23": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Sonate für Klavier op. 1",
+      "type": "Werke"
+    },
+    "werke.34": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Konzert für Streichquartett und Orchester B-Dur nach dem Concerto grosso opus 6 Nr. 7. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.45": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Zwei Lieder für Gesang und Klavier op. 14",
+      "type": "Werke"
+    },
+    "werke.56": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Fünf Klavierstücke op. 23",
+      "type": "Werke"
+    },
+    "schriften.108": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Franz Liszts Werk und Wesen",
+      "type": "Schriften"
+    },
+    "werke.67": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Concerto for Violin and Orchestra op. 36",
+      "type": "Werke"
+    },
+    "werke.78": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Die Jakobsleiter. Oratorium",
+      "type": "Werke"
+    },
+    "schriften.9": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Die glückliche Hand",
+      "type": "Schriften"
+    },
+    "werke.89": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Wozzeck op. 7",
+      "type": "Werke"
+    },
+    "werke.13": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Verklärte Nacht op. 4",
+      "type": "Werke"
+    },
+    "werke.24": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Fünfzehn Gedichte aus „Das Buch der hängenden Gärten“ von Stefan George op. 15",
+      "type": "Werke"
+    },
+    "werke.35": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Der Nöck op. 129 Nr. 2. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.46": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Am Strande",
+      "type": "Werke"
+    },
+    "werke.57": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Serenade op. 24",
+      "type": "Werke"
+    },
+    "schriften.109": {
+      "authors": { 
+        "p_1302": "Gräner, Georg" },
+      "title": "Arnold Schönberg",
+      "type": "Schriften"
+    },
+    "werke.68": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Streichquartett Nr. 4 op. 37",
+      "type": "Werke"
+    },
+    "werke.79": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Moses und Aron. Oper in drei Akten",
+      "type": "Werke"
+    },
+    "werke.14": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Verklärte Nacht op. 4. Einrichtung für Streichorchester",
+      "type": "Bearbeitungen"
+    },
+    "werke.36": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Der Waffenschmied. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.47": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Fünf Orchesterstücke op. 16",
+      "type": "Werke"
+    },
+    "werke.58": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Suite für Klavier op. 25",
+      "type": "Werke"
+    },
+    "werke.69": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Kammersymphonie Nr. 2 op. 38",
+      "type": "Werke"
+    },
+    "werke.15": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Verklärte Nacht op. 4. Einrichtung für Streichorchester",
+      "type": "Bearbeitungen"
+    },
+    "werke.26": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Streichquartett Nr. 2 op. 10",
+      "type": "Werke"
+    },
+    "werke.37": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Konzert für Violoncell g-Moll. Bearbeitung für Violoncello mit Klavierbegleitung",
+      "type": "Bearbeitungen"
+    },
+    "werke.48": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Fünf Orchesterstücke op. 16. Bearbeitung für Kammerorchester",
+      "type": "Bearbeitungen"
+    },
+    "werke.59": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Quintett für Flöte, Oboe, Klarinette, Horn und Fagott op. 26",
+      "type": "Werke"
+    },
+    "werke.16": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Gurre-Lieder für Soli, Chor und Orchester",
+      "type": "Werke"
+    },
+    "werke.27": {
+      "authors": { 
+        "p_1339": "Greissle, Felix" },
+      "title": "Streichquartett Nr. 2 op. 10. Klavierauszug zu vier Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.38": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Vier Kadenzen zum Konzert für Violoncell g-Moll. Kadenzen",
+      "type": "Bearbeitungen"
+    },
+    "werke.49": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Fünf Orchesterstücke op. 16. Bearbeitung für normale Besetzung reduziert",
+      "type": "Bearbeitungen"
+    },
+    "werke.17": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Gurre-Lieder für Soli, Chor und Orchester. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.28": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Streichquartett Nr. 2 op. 10. Litanei. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.39": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Konzert für Violoncello und Orchester D-Dur in freier Umgestaltung nach dem Concerto per Clavicembalo. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.18": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "So tanzen die Engel. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.29": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Streichquartett Nr. 2 op. 10. Entrückung. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.190": {
+      "authors": { 
+        "p_3662": "Steuermann, Eduard" },
+      "title": "Kammersymphonie für 15 Solo-Instrumente op. 9. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.19": {
+      "authors": { 
+        "p_385": "Berg, Alban" },
+      "title": "Nun sag ich Dir zum ersten Mal. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.180": {
+      "authors": {  },
+      "title": "Faust. Klavierauszug",
+      "type": "Bearbeitungen"
+    },
+    "werke.191": {
+      "authors": { 
+        "p_543": "Brahms, Johannes" },
+      "title": "Variationen über ein Thema von Joseph Haydn op. 56a",
+      "type": "Werke"
+    },
+    "werke.170": {
+      "authors": { 
+        "p_1925": "Kodály, Zoltán" },
+      "title": "Psalmus hungaricus op. 13",
+      "type": "Werke"
+    },
+    "werke.181": {
+      "authors": { 
+        "p_3106": "Schalk, Franz" },
+      "title": "La Juive. Klavierauszug",
+      "type": "Bearbeitungen"
+    },
+    "werke.192": {
+      "authors": { 
+        "p_3320": "Schubert, Franz" },
+      "title": "Streichquintett D 956",
+      "type": "Werke"
+    },
+    "werke.160": {
+      "authors": {  },
+      "title": "One more day, my John",
+      "type": "Werke"
+    },
+    "werke.171": {
+      "authors": { 
+        "p_331": "Beethoven, Ludwig van" },
+      "title": "Fantasie op. 80",
+      "type": "Werke"
+    },
+    "werke.182": {
+      "authors": { 
+        "p_252": "Bach, Johann Sebastian" },
+      "title": "Präludium und Fuge Es-Dur BWV 552",
+      "type": "Werke"
+    },
+    "werke.193": {
+      "authors": { 
+        "p_486": "Blumenthal, Joseph von" },
+      "title": "100 Übungsstücke op. 42",
+      "type": "Werke"
+    },
+    "werke.150": {
+      "authors": { 
+        "p_3612": "Stein, Erwin" },
+      "title": "Lulu. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.161": {
+      "authors": {  },
+      "title": "Deux Danses op. 73",
+      "type": "Werke"
+    },
+    "werke.172": {
+      "authors": { 
+        "p_1339": "Greissle, Felix" },
+      "title": "Streichquartett Nr. 3 op. 30. Klavierauszug zu vier Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.183": {
+      "authors": {  },
+      "title": "Das Dreimäderlhaus",
+      "type": "Werke"
+    },
+    "werke.194": {
+      "authors": { 
+        "p_252": "Bach, Johann Sebastian" },
+      "title": "Brandenburgisches Konzert BWV 1050",
+      "type": "Werke"
+    },
+    "werke.151": {
+      "authors": { 
+        "p_3612": "Stein, Erwin" },
+      "title": "Rondo für Klavier",
+      "type": "Werke"
+    },
+    "werke.162": {
+      "authors": { 
+        "p_2257": "Malipiero, Gian Francesco" },
+      "title": "I tre canti di Filomela",
+      "type": "Werke"
+    },
+    "werke.173": {
+      "authors": { 
+        "p_4332": "Zillig, Winfried" },
+      "title": "Streichquartett Nr. 1",
+      "type": "Werke"
+    },
+    "werke.184": {
+      "authors": { 
+        "p_3946": "Wagner, Richard" },
+      "title": "Das Rheingold",
+      "type": "Werke"
+    },
+    "werke.195": {
+      "authors": { 
+        "p_812": "Czerny, Carl" },
+      "title": "100 Übungsstücke […] in fortschreitender Ordnung op. 139",
+      "type": "Werke"
+    },
+    "werke.130": {
+      "authors": { 
+        "p_4001": "Webern, Anton" },
+      "title": "Fünf Sätze für Streichquartett op. 5",
+      "type": "Werke"
+    },
+    "werke.141": {
+      "authors": { 
+        "p_2435": "Monn, Matthias Georg" },
+      "title": "Concerto per il Clavicembalo",
+      "type": "Werke"
+    },
+    "werke.152": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Von heute auf morgen. Oper in einem Akt op. 32. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.163": {
+      "authors": { 
+        "p_1351": "Gruenberg, Louis" },
+      "title": "The Daniel Jazz op. 21",
+      "type": "Werke"
+    },
+    "werke.174": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Erwartung. Monodram in einem Akt op. 17. Klavierauszug zu zwei Händen",
+      "type": "Bearbeitungen"
+    },
+    "werke.185": {
+      "authors": {  },
+      "title": "Fra Diavolo ou L’Hôtellerie de Terracine. Klavierauszug",
+      "type": "Bearbeitungen"
+    },
+    "werke.196": {
+      "authors": { 
+        "p_1548": "Herz, Henri" },
+      "title": "Scales and excercises",
+      "type": "Werke"
+    },
+    "werke.131": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Zwei Gesänge für eine Baritonstimme und Klavier op. 1",
+      "type": "Werke"
+    },
+    "werke.142": {
+      "authors": { 
+        "p_3946": "Wagner, Richard" },
+      "title": "Parsifal",
+      "type": "Werke"
+    },
+    "werke.153": {
+      "authors": { 
+        "p_3263": "Schönberg, Arnold" },
+      "title": "Streichquartett Nr. 2 op. 10. Einrichtung für Streichorchester",
+      "type": "Bearbeitungen"
+    },
+    "werke.164": {
+      "authors": { 
+        "p_647": "Busoni, Ferruccio" },
+      "title": "Rondò arlecchinesco for orchestra op. 46",
+      "type": "Werke"
+    },
+    "werke.175": {
+      "authors": { 
+        "p_971": "Eisler, Hanns" },
+      "title": "Zeitungsausschnitte op. 11",
+      "type": "Werke"
+    },
+    "werke.186": {
+      "authors": {  },
+      "title": "Messe D 950. ",
+      "type": "Bearbeitungen"
+    },
+    "werke.197": {
+      "authors": { 
+        "p_3453": "Ševčík, Otakar" },
+      "title": "Schule der Violintechnik op. 1\/1",
+      "type": "Werke"
+    },
+    "schriften.90": {
+      "authors": { 
+        "p_1228": "Giraud, Albert" },
+      "title": "Pierrot Lunaire",
+      "type": "Schriften"
+    },
+    "werke.120": {
+      "authors": { 
+        "p_4098": "Wellesz, Egon" },
+      "title": "Österreichisches Reiterlied",
+      "type": "Werke"
+    }
+  }
+*/
+
+// create new character style for persons and works inside footnotes
+/*if (myDocument.characterStyles.itemByName("insideNote").isValid) {}
+else {
+  const insideNote = myDocument.characterStyles.add({
+    name: "insideNote"
+  })
+}*/
+
+//alert(myDocument.characterStyles.itemByName("insideNote").isValid)
+
+// select the above created character style
+//const style = myDocument.characterStyles.itemByName("insideNote")
+
+// get all footnotes
+const footnotes = rootElement.evaluateXPathExpression("//comment")
+
+// zur Funktion "evaluateXPathExpression" siehe "https://community.adobe.com/t5/indesign-discussions/evaluatexpathexpression-vs-xml-rules-which-is-better/m-p/7130941?profile.language=de"
+// zur Verwendung von Namespaces siehe "https://www.hilfdirselbst.ch/foren/evaluateXPathExpression_mit_Namespaces_P481242.html"
+
+/*
+for (let i = 0; i < footnotes.length; i++) {
+  // get tagged persons inside of footnotes
+  const persons = footnotes[i].evaluateXPathExpression("//person")
+  
+  // get tagged works inside of footnotes
+  const works = footnotes[i].evaluateXPathExpression("//work")
+
+  // apply new character style to the found persons and works 
+  for (let j = 0; j < persons.length; j++) {
+    persons[j].applyCharacterStyle(style)
+  }
+
+  for (let j = 0; j < works.length; j++) {
+    works[j].applyCharacterStyle(style)
+  }
+}
+// SCHEINT NOCH NICHT RICHTIG ZU FUNKTIONIEREN! ÜBERPRÜFEN!
+*/
+
+// create indesign footnotes
+try {
+    for (let i = 0; i < footnotes.length; i++) {
+
+        // footnote text, returns a string!
+        const text = footnotes[i].contents
+
+        // select the text
+        const fnCharRange = footnotes[i].parentStory.characters.itemByRange(footnotes[i].insertionPoints.item(1).index, footnotes[i].insertionPoints.item(-1).index)
+        
+        // create a new footnote at the beginning of the text
+        const fNote = footnotes[i].insertionPoints.item(0).footnotes.add()
+        
+        // add the footnote text at the bottom of the page
+        //fNote.insertionPoints.item(-1).contents = text
+        
+        /* ############################ NEU ####################################### */
+        // move the footnote Text (including its formatting) to the bottom of the page
+        fnCharRange.move(LocationOptions.AFTER, fNote.insertionPoints.item(-1))
+        /* ######################################################################## */
+        
+        // remove the footnote-contents in the main text
+        //fnCharRange.remove()
+
+        // Durch das Verschieben des Fußnotentextes scheint dieser Code nicht mehr nötig zu sein!
+        /*if (myDocument.indexes.length !== 0) {
+          // Create Index entry for each person and work before the text in the <footnote> Element is removed because the original index entries are removed with it (Indesign footnotes can't contain XML tags).
+          const persons = footnotes[i].evaluateXPathExpression("//person")
+          const persIds = persons.map(person => person.xmlAttributes.itemByName("key").value)
+          const distinctPersIds = persIds.filter((value, index, array) => array.indexOf(value) === index)
+          // array for persons where only the connected works, arrangements and writings are indexed
+          const showOnlyWorks = []
+          // include Arnold Schönberg
+          showOnlyWorks.push("p_3263")
+          const index = myDocument.indexes.item(0)
+          for (let j = 0; j < distinctPersIds.length; j++) {
+              if (showOnlyWorks.includes(distinctPersIds[i])) return
+              try {
+                  const persName = mapIdToPersName[distinctPersIds[j]]
+                  const topic = index.topics.itemByName(persName)
+                  const text = fNote.texts.everyItem()
+                  const pageReference = topic.pageReferences.add(text, PageReferenceType.CURRENT_PAGE)
+                  // ##################### NEU #####################
+                  pageReference.pageNumberStyleOverride = insideNote
+                  // ###############################################
+              } catch (err) {
+                  alert(err)
+              }
+          }
+          const works = footnotes[i].evaluateXPathExpression("//werk")
+          const workIds = works.map(work => work.xmlAttributes.itemByName("key").value)
+          const distinctWorkIds = workIds.filter((value, index, array) => array.indexOf(value) === index)
+          for (let j = 0; j < distinctWorkIds.length; j++) {
+              try {
+                  const workTitle = mapIdToWork[distinctWorkIds[j]]["title"]
+                  const authors = mapIdToWork[distinctWorkIds[j]]["authors"]
+                  for (const [key, value] of Object.entries(authors)) {
+                      let topic
+                      if (showOnlyWorks.includes(key)) {
+                          topic = index.topics.itemByName(value).topics.itemByName(mapIdToWork[distinctWorkIds[j]]["type"]).topics.itemByName(workTitle)
+                      } else {
+                          topic = index.topics.itemByName(value).topics.itemByName(workTitle)
+                      }
+                      const text = fNote.texts.everyItem()
+                      const pageReference = topic.pageReferences.add(text, PageReferenceType.CURRENT_PAGE)
+                      // ##################### NEU #####################
+                      pageReference.pageNumberStyleOverride = insideNote
+                      // ###############################################
+                    }
+              } catch (err) {
+                  alert(err)
+              }
+          }
+        }*/
+
+        
+    }
+} catch (err) {
+    alert("Ein Fehler ist aufgetreten: " + err)
+}
+
+alert(footnotes.length + " Fußnoten erfolgreich angelegt!")
+
+function alert(msg) {
+    theDialog = app.dialogs.add()
+    col = theDialog.dialogColumns.add()
+    colText = col.staticTexts.add()
+    colText.staticLabel = "" + msg
+    theDialog.canCancel = false
+    theDialog.show()
+    theDialog.destroy()
+    return
+}

@@ -1,0 +1,31 @@
+const myInDesign = require("indesign")
+const app = myInDesign.app
+
+const myDocument = app.documents.item(0)
+
+const rootElement = myDocument.xmlElements.item(0)
+
+// Tabellen
+const tables = rootElement.evaluateXPathExpression("//table")
+
+for (i = 0; i < tables.length; i++) {
+  try {
+    let text = tables[i].texts.item(0)
+    let table = text.convertToTable("\t","\r");
+  } catch (err) {
+    alert("Ein Fehler ist aufgetreten: " + err)
+  }
+}
+
+alert("Successfully created " + tables.length + " tables!")
+
+function alert(msg) {
+  theDialog = app.dialogs.add()
+  col = theDialog.dialogColumns.add()
+  colText = col.staticTexts.add()
+  colText.staticLabel = "" + msg
+  theDialog.canCancel = false
+  theDialog.show()
+  theDialog.destroy()
+  return
+}

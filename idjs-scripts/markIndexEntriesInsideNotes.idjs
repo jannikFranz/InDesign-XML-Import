@@ -1,0 +1,37 @@
+// This script looks for text objects that have the character style "insideNote" and changes their content.
+// It is used for marking page reference numbers of a generated index with a "F" if the indexed text is inside of a footnote on the referred page.
+const myInDesign = require("indesign")
+const app = myInDesign.app
+const { NothingEnum } = myInDesign
+
+const myDocument = app.documents.item(0)
+
+const charStyleName = "insideNote"
+
+if (myDocument.characterStyles.item(charStyleName) === undefined) {
+    alert(`Das benötigte Zeichenformat ${charStyleName} ist nicht angelegt.`)
+    return
+}
+
+app.findTextPreferences = NothingEnum.NOTHING
+
+app.findTextPreferences.appliedCharacterStyle = charStyleName
+
+const foundText = myDocument.findText()
+
+for (let i = 0; i < foundText.length; i++) {
+    foundText[i].contents = foundText[i].contents + "F"
+}
+
+alert(`Es wurden ${foundText.length} Seitenverweise aktualisiert.`)
+
+function alert(msg) {
+    theDialog = app.dialogs.add()
+    col = theDialog.dialogColumns.add()
+    colText = col.staticTexts.add()
+    colText.staticLabel = "" + msg
+    theDialog.canCancel = false
+    theDialog.show()
+    theDialog.destroy()
+    return
+}
